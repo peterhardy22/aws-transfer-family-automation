@@ -1,0 +1,10 @@
+AWSTemplateFormVersion: "2010-09-09"
+Description: Creates a DynamoDB table for SFTP logistics for event driven actions.
+
+Parameters:
+  pLogisticsTableName:
+    Type: String
+    Description: Name of the SFTP logistics table.
+    Default: global-sftp-logistics-table
+
+Resources:
