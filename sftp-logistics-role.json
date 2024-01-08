@@ -1,0 +1,58 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "CloudWatchLogging",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStreamP",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:us-east-2:############:log-group:/aws/lambda/sftp-logistics:*"
+        },
+        {
+            "Sid": "DynamoDBAccess",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetItem",
+                "dynamodb:Query"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-2:############:table/global-sftp-logistics-table",
+                "arn:aws:dynamodb:us-east-2:############:table/global-sftp-logistics-table/index/"
+            ]
+        },
+        {
+            "Sid": "LambdaAttachToVPCMod",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface",
+                "ec2:DescribeNeetworkInterface"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SecretsManagerAccess",
+            "Effect": "Allow",
+            "Action": "secretmanager:GetSecretValue",
+            "Resource": [
+                "arn:aws:secretmanager:us-east-2:############:secret:prod/sftp-logistics",
+                "arn:aws:secretmanager:us-east-1:############:secret:prod/sftp-logistics"
+            ]
+        },
+        {
+            "Sid": "S3BucketAccess",
+            "Effect": "Allow",
+            "Action": [
+                "s3:DeleteObject",
+                "s3:Get*",
+                "s3:List*",
+                "s3:PutObject"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
