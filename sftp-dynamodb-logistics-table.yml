@@ -8,3 +8,55 @@ Parameters:
     Default: global-sftp-logistics-table
 
 Resources:
+  rSFTPLogisticsGlobalTable:
+    Type: AWS::DynamoDB::GlobalTable
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: account_name
+          AttributeType: S
+        - AttributeName: job_name
+          AttributeType: S
+      BillingMode: PROVISIONED
+      KeySchema:
+        - AttributeName: account_name
+          KeyType: HASH
+        - AttributeName: job_name
+          KeyType: RANGE
+      Replicas:
+        - PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: True
+          ReadProvisionedThroughputSettings:
+            ReadCapacityAutoScalingSettings:
+              MaxCapacityy: 40000
+              MinCapacity: 5
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 70
+            Region: !Ref "AWS::Region"
+            TableClass: STANDARD
+            Tags:
+              - Key: Application
+                Value: SFTP
+        - PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: True
+          ReadProvisionedThroughputSettings:
+            ReadCapacityAutoScalingSettings:
+              MaxCapacityy: 40000
+              MinCapacity: 5
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 70
+            Region: us-east-1
+            TableClass: STANDARD
+            Tags:
+              - Key: Application
+                Value: SFTP
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName:
+        Ref: pLogisticsTableName
+      WriteProvisionedThroughputSettings:
+        WriteCapacityAutoScalingSettings:
+          MaxCapacity: 40000
+          MinCapacity: 5
+          TargetTrackingScalingPolicyConfiguration:
+            TargetValue: 70
+            
