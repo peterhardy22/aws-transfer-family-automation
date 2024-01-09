@@ -122,4 +122,16 @@ def lambda_handler(event: dict, context: dict) -> None:
         if new_file_name is not None and new_file_name != "":
             file_name: str = new_file_name
         
+        if folder_name is None and destination is None or folder_name == "" and destination == "" \
+            or folder_name == "" and destination is None or folder_name is None and destination == "":
+              result_body: str = f"The logistic in the table for file {file_name} is incomplete due to either the destination or folder_name value being empty."
+              subject: str = f"AWS SFTP Logistics Lambda: {file_name} logistic is incomplete."
+              sns_client.publish(
+                  TopicArn=sns_topic_arn,
+                  Message=json.dumps({"default": json.dumps(result_body)}),
+                  Subject=subject,
+                  MessageStructure="json"
+              )
+              break
+        
         
