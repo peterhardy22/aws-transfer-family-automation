@@ -5,15 +5,15 @@ Parameters:
   pResourceName:
     Type: String
     Description: Prefix for the name of the resources created.
-    Default: SFTP
+    Default: sftp
   pEnvironment:
     Type: String
     Description: Environment resources are being deployed in.
     ConstraintDescription: Must either be Dev or Prod
     AllowedValues:
-      - Dev
-      - Prod
-    Default: Dev
+      - dev
+      - prod
+    Default: dev
   pResourceNameApplication:
     Type: String
     Description: Name of integration application.
@@ -75,4 +75,3 @@ Resources:
   rAPIGateway:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      
