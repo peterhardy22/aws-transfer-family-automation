@@ -23,6 +23,7 @@ session = new_aws_session(os.environ["ACCOUNT_NUMBER"])
 orchestration_secret_name: str = os.environ["ORCHESTRATION_SECRET"]
 sftp_secret_name: str = os.environ["SFTP_SECRET"]
 sftp_table_name: str = os.environ["SFTP_TABLE_NAME"]
+sns_topic_arn: str = os.environ["SNS_TOPIC_ARN"]
 region: str = os.environ["AWS_REGION"]
 
 dynamodb_resource = session.resource("dynamodb", region_name=region)
@@ -86,4 +87,39 @@ def lambda_handler(event: dict, context: dict) -> None:
         if prefix == "*" and object_source_path == account_logistic.get("source"):
             account_logistic["file_name"] = event_file_name
             job_logistics_list.append(account_logistic)
+        
+    if len(job_logistics_list) == 0:
+        result_body: str = f"The file {event_file_name} does not exist in the logistics table for account_name: {account_name}."
+        subject: str = f"AWS SFTP Logistics Lambda: {event_file_name} does not have logistics set up."
+        sns_client.publish(
+            TopicArn=sns_topic_arn,
+            Message=json.dumps({"default": json.dumps(result_body)}),
+            Subject=subject,
+            MessageStructure="json"
+        )
+        sys.exit(1)
+
+    for job_logistic in job_logistics_list:
+        try:
+            destination: str = job_logistic.get("destination")
+            file_name: str = job_logistic.get("file_name")
+            folder_name: str = job_logistic.get("folder_name")
+            job_name: str = job_logistic["job_name"]
+            new_file_name: str = job_logistic.get("new_file_name")
+            server_name_list: list = job_logistic["server_name"].strip("][").split(", ")
+            source: str = job_logistic["source"]
+        except:
+            result_body: str = f"The file {file_name} does not exist in the logistics table for account_name: {account_name}."
+            subject: str = f"AWS SFTP Logistics Lambda: {file_name} does not have logistics set up."
+            sns_client.publish(
+                TopicArn=sns_topic_arn,
+                Message=json.dumps({"default": json.dumps(result_body)}),
+                Subject=subject,
+                MessageStructure="json"
+            )
+            break
+
+        if new_file_name is not None and new_file_name != "":
+            file_name: str = new_file_name
+        
         
