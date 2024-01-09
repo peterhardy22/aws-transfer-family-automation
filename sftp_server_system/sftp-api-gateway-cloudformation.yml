@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates API Gateway and Cognito User Pool for integrating ServiceNow form usage and ticketing.
+
+Parameters:
+  pResourceName:
+    Type: String
+    Description: Prefix for the name of the resources created.
+    Default: sftp
+  pEnvironment:
+    Type: String
+    Description: Environment resources are being deployed in.
+    ConstraintDescription: Must either be Dev or Prod
+    AllowedValues:
+      - dev
+      - prod
+    Default: dev
+  pResourceNameApplication:
+    Type: String
+    Description: Name of integration application.
+    Default: servicenow
+  pCognitoUserPoolDomainPrefix:
+    Type: String
+    Description: Domain name used for Cognito domain for the OAuth 2.0 endpoints.
+    Default: dev-ue2-servicenow
+
+Mappings:
+  RegionMap:
+    us-east-2:
+      mRegionPrefix: ue2
+      mVpceId: vpce-#################
+      mVpcId: vpc-#################
+
+Resources:
+  rCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UsernameConfiguration:
+        CaseSensitive: False
+      UserPoolName: !Join ["", [!Ref pEnvironment, "-", !FindInMap [RegionMap, !Ref "AWS::Region", mRegionPrefix], "-", !Ref pResourceName, "-", "cognito-userpool-servicenow"]]
+  
+  rCognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref rCognitoUserPool
+      Domain: !Ref pCognitoUserPoolDomainPrefix
+  
+  rCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref rCognitoUserPool
+      AccessTokenValidity: 24
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthFlowsUserPoolClient: TargetValueAllowedOAuthScopes:
+        - application/application.write
+      CallbackURLs:
+        - http://dev.service-now.com/oauth_redirect.do
+      ClientName: servicenow-dev
+      EnableTokenRevocation: False
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: TargetValueIdTokenValidity: 1
+      LogoutURLs:
+        - https://www.amazon.com
+      RefreshTokenValidity: 30
+      SupportedIdentityProviders:
+        - COGNITO
+  
+  rAPIGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:

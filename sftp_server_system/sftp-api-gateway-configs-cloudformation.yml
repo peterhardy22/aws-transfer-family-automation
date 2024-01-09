@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates API Gateway Resource and Method for invoking sftp-user-creation Lambda function.
+
+Parameters:
+  pResourceName:
+    Type: String
+    Description: Prefix for the name of the resources created.
+    Default: sftp
+  pEnvironment:
+    Type: String
+    Description: Environment resources are being deployed in.
+    ConstraintDescription: Must either be Dev or Prod
+    AllowedValues:
+      - dev
+      - prod
+    Default: dev
+  pResourceNameApplication:
+    Type: String
+    Description: Name of integration application.
+    Default: servicenow
+  pAPIGatewayID:
+    Type: String
+    Description: RestApiId used for adding to API Gateway.
+    Default: REQUIRES INPUT FROM RUNNING api-gateway-data-retrieval.py
+  pAPIGatewayRootResourceId:
+    Type: String
+    Description: API Gateway's Root Resource Id used for the ParentId.
+    Default: REQUIRES INPUT FROM RUNNING api-gateway-data-retrieval.py
+  pAPIGatewayAuthorizerId:
+    Type: String
+    Description: Authorizer ideentifier.
+    Default: REQUIRES INPUT FROM RUNNING api-gateway-data-retrieval.py
+  pSFTPUserCreationLambdaArn:
+    Type: String
+    Description: Lambda ARN for the sftp-user-creation Lambda function.
+    Default: arn:aws:lambda:us-east-2:############:function:dev-ue2-sftp-user-creation
+
+Resources:
+  
