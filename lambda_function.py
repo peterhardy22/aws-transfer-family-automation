@@ -21,7 +21,7 @@ except:
 
 session = new_aws_session(os.environ["ACCOUNT_NUMBER"])
 orchestration_secret_name: str = os.environ["ORCHESTRATION_SECRET"]
-sftp_secret_name: str = os.environ["SFTP_SECRET"]
+smb_secret_name: str = os.environ["SFTP_SECRET"]
 sftp_table_name: str = os.environ["SFTP_TABLE_NAME"]
 sns_topic_arn: str = os.environ["SNS_TOPIC_ARN"]
 region: str = os.environ["AWS_REGION"]
@@ -50,8 +50,8 @@ def lambda_handler(event: dict, context: dict) -> None:
 
     account_name: str = object_key_list[1]
     event_file_name: str = object_key_list[-1]
-    source_bucket_name: str = event["Records"][0]["s3"]["bucket"]["name"]
-    object_source_path: str = fr"s3://{source_bucket_name}/{object_partial_source_path}/"
+    source_s3_bucket_name: str = event["Records"][0]["s3"]["bucket"]["name"]
+    object_source_path: str = fr"s3://{source_s3_bucket_name}/{object_partial_source_path}/"
 
     try:
         dynamodb_response: dict = dynamodb_table_resource.query(
@@ -134,4 +134,111 @@ def lambda_handler(event: dict, context: dict) -> None:
               )
               break
         
+        source_split: list = source.split("/")
+        source_key: str = ("/").join(source_split[3::])
+        destination_split: list = destination.split("/")
+
+        if destination.startswith("s3://"):
+            destination_s3_bucket_name: str = destination_split[2]
+            partial_destination_key: str = ("/").join(destination_split[3::])
+            destination_key: str = f"{partial_destination_key}{file_name}"
+
+            copy_source: dict = {
+                "Bucket": source_s3_bucket_name,
+                "Key": f"{source_key}{event_file_name}"
+            }
+            try:
+                s3_resource.meta.client.copy(copy_source, destination_s3_bucket_name, destination_key)
+                print(f"File {file_name} was successfully placed in destination: {destination}.")
+            except:
+                result_body: str = f"An issue occured and the {file_name} was not able to be copied and placed into the S3 bucket destination: {destination}."
+                subject: str = f"AWS SFTP Logistics Lambda: {file_name} could not be copied to another S3 bucket."
+                sns_client.publish(
+                    TopicArn=sns_topic_arn,
+                    Message=json.dumps({"default": json.dumps(result_body)}),
+                    Subject=subject,
+                    MessageStructure="json"
+                )
+                break
+        else:
+            first_level_destination: str = destination_split[4]
+            second_level_destination: str = ("//").join(destination_split[5::])
+
+            if not os.path.isfile(f"/tmp/{event_file_name}"):
+                print(f"Downloading {event_file_name} from SFTP S3 bucket.")
+                s3_resource.meta.client.download_file(source_s3_bucket_name, f"{source_key}{event_file_name}", fr"/tmp/{event_file_name}")
+                print(f"Finished downloading {event_file_name} from SFTP S3 bucket.")
+            else:
+                print(f"{event_file_name} already exists in Lambda function tmp folder.")
+
+        if folder_name is not None and folder_name != "" and destination is not None:
+            try:
+                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            except:
+                urllib3.disable_warnings(InsecureRequestWarning)
+            
+            orchestration_user_name, orchestration_pswd = get_secret(sts_client, orchestration_secret_name)
+            orchestration_base_url: str = os.environ["ORCHESTRATION_BASE_URL"]
+            token: str = login(orchestration_base_url, orchestration_user_name, orchestration_pswd)
+            print("Ensuring file is in destination before ordering orchestration tool workflow.")
+            time.sleep(2)
+            status_code: str = order_job(orchestration_base_url, token, folder_name)
+
+            if status_code == 200:
+                print(f"The orchestration tool workflow {folder_name} has been ordered.")
+                break
+            else:
+                print(status_code)
+                result_body: str = f"An issue occured when trying to order the workflow in the orchestration tool for {folder_name}."
+                subject: str = f"AWS SFTP Logistics Lambda: {folder_name} worklflow error in orchestration tool."
+                sns_client.publish(
+                    TopicArn=sns_topic_arn,
+                    Message=json.dumps({"default": json.dumps(result_body)}),
+                    Subject=subject,
+                    MessageStructure="json"
+                )
+                break
         
+        smb_user_name, smb_pswd = get_secret(sts_client, smb_secret_name)
+        local_machine_name: str = os.environ["LOCAL_MACHINE_NAME"]
+        domain: str = os.environ["DOMAIN"]
+
+        for server_machine_name in server_name_list:
+            try:
+                conn = SMCConnection(smb_user_name, smb_pswd, server_machine_name,
+                                     local_machine_name, domain=domain, use_ntlm_v2=True,
+                                     is_direct_tcp=True)
+                
+                server_ip: str = socket.gethostbyname(server_machine_name)
+                conn.connect(server_ip, 445)
+            except:
+                result_body: str = f"An issue occured with the SMB connection to server: {server_machine_name} and therefore the file {file_name} was not able to be moved."
+                subject: str = f"AWS SFTP Logistics Lambda: {file_name} could not be copied to local file share."
+                sns_client.publish(
+                    TopicArn=sns_topic_arn,
+                    Message=json.dumps({"default": json.dumps(result_body)}),
+                    Subject=subject,
+                    MessageStructure="json"
+                )
+                break
+            try:
+                file_object = open(fr"/tmp/{event_file_name}", "rb")
+                print(f"Beginning copy of file {file_name} to file share {server_machine_name}.")
+                conn.storeFile(first_level_destination, f"{second_level_destination}\{file_name}", file_object)
+                conn.close()
+                print(f"File {file_name} was successfully placed in destination: {destination}.")
+            except:
+                result_body: str = f"An issue occured inside the SMB connection to server: {server_machine_name} and therefore the file {file_name} was not able to be moved."
+                subject: str = f"AWS SFTP Logistics Lambda: {file_name} could not be copied to local file share."
+                sns_client.publish(
+                    TopicArn=sns_topic_arn,
+                    Message=json.dumps({"default": json.dumps(result_body)}),
+                    Subject=subject,
+                    MessageStructure="json"
+                )
+
+    s3_client.delete_object(
+        Bucket=source_s3_bucket_name,
+        Key=object_key
+    )
+    print(f"The file {event_file_name} has been removed from the SFTP s3 bucket.")
