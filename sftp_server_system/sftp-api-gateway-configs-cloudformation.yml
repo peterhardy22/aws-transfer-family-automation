@@ -66,4 +66,19 @@ Resources:
       ResourceId: !Ref rAPIGatewayResource
       RestApiId: !Ref pAPIGatewayId
 
-    
+  rAPIGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - rAPIGatewayMethod
+    Properties:
+      Description: Deploys API Gateway resource to a stage so ServiceNow can call the API.
+      RestApiId: !Ref pAPIGatewayId
+      StageName: Dev
+
+  rLambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref pSFTPUserCreationLambdaArn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join ["". ["arn:aws:execute-api:us-east-2:############:", !Ref pAPIGatewayId, "/*/POST/sftp"]]   

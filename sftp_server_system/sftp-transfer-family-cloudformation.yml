@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates environment for SFTP which includes a Global DynamoDB table, a multi-AZ SFTP server in us-east-2, and a Lambda function for user creation that is triggered by API Gateway.
+
+Parameters:
+  pResourceName:
+    Type: String
+    Description: Prefix for the name of the resources created.
+    Default: sftp
+  pEnvironment:
+    Type: String
+    Description: Environment resources are being deployed in.
+    ConstraintDescription: Must either be Dev or Prod
+    AllowedValues:
+      - dev
+      - prod
+    Default: dev
+  pResourceNameApplication:
+    Type: String
+    Description: Name of integration application.
+    Default: transfer-family
+  pUserTableName:
+    Type: String
+    Description: Name of the DynamoDB user table for storing SFTP user credentials.
+    Default: dev-global-sftp-user-table
+  pUserCreationLambdaSFTPAdminRole:
+    Type: String
+    Description: Admin logging arn for creating SFTP servers and invoking the user creation Lambda function.
+    Default: arn:aws:iam::############:role/sftp-user-creation-admin-role
+  
+Mappings:
+  RegionMap:
+    us-east-2:
+      mRegionPrefix: ue2
+      mLambdaS3Bucket: dev-us-east-2-lambda
+      mSFTPS3Bucket: dev-us-east-2-sftp
+      mPrimarySubnetId: subnet-#################
+      mSecondarySubnetId: subnet-#################
+      mTeriarySubnetId: subnet-#################
+      mVpcId: vpc-#################
+
+Resources:
+  rSFTPGlobalTable:
+    Type: AWS::DynamoDB::GlobalTable
+    Properties:
+      TableName:
+        Ref: pUserTableName
+      AttributeeDefinitions:
+        - AttributeName: user_name
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreeamViewType: NEW_AND_OLD_IMAGES
+      KeySchema:
+        - AttributeName: useer_namee
+          KeyType: HASH
+      Replicas:
+        - PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: True
+          Region: !Ref AWS::Region
+          TableClass: STANDARD_INFREQUENT_ACCESS
+          Tags:
+            - Key: Application
+              Value: sftp
+        - PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: True
+          Region: us-east-1
+          TableClass: STANDARD_INFREQUENT_ACCESS
+          Tags:
+            - Key: Application
+              Value: sftp  
+
+  rSFTPTransferFamilyServer:
+    Type: AWS::Transfer::Server
+    Properties:
+      Domain: S3
+      EndpointDetails:  
+        SubnetIds:
+          - !FindInMap [RegionMap, !Ref AWS::Region, mPrimarySubnetId] 
+          - !FindInMap [RegionMap, !Ref AWS::Region, mSecondarySubnetId] 
+          - !FindInMap [RegionMap, !Ref AWS::Region, mTertiarySubnetId]  
+        VpcId: !FindInMap [RegionMap, !Ref AWS::Region, mVpcId]
+      EndpointType: VPC
+      IdentityProviderType: SERVICE_MANAGED
+      LoggingRole: !Ref pUserCreationLambdaSFTPAdminRole
+      Protocols:
+        - SFTP
+      SecurityPolicyName: TransferSecurityPolicy-2020-06
+  
+  rSFTPUserCreationLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !FindInMap [RegionMap, !Ref AWS::Region, mLambdaS3Bucket]
+        S3Key: sftp-user-creation/sftp-user-creation.zip
+      Description: Creates Lambda function used for creating and modifying Transfer Family SFTP users.
+      FunctionName: !Join ["-", [!Ref pEnvironment, !FindInMap [RegionMap, !Ref "AWS::Region", mRegionPrefix], !Ref pResourceName, "sftp-user-creation"]]
+      Handler: lambda_function.lambda_handler
+      Role: !Ref pUserCreationLambdaSFTPAdminRole
+      Runtime: python3.12
+      Timeout: 15
+    
+  rLogGroupPopulate:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - rSFTPUserCreationLambdaFunction
+    Properties:
+      LogGroupName: !Join ["", ["/aws/lambda/", !Ref rSFTPUserCreationLambdaFunction]]
+      RetentionInDays: 545
+  
+  rPopulateSFTPUserCreationLambdaAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn:
+      - rSFTPUserCreationLambdaFunction
+    Properties:
+      AlarmActions: [Ref: rSnsTopicSFTPLambdaErrors]
+      AlarmDescription: Errors found in the execution of the sftp-user-creation Lambda function.
+      AlarmName: !Join ["", [!Ref rSFTPUserCreationLambdaFunction, "-cwalarm"]]
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: "1"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value:
+            Ref: rSFTPUserCreationLambdaFunction
+  
+  rSnsTopicSFTPUserCreationLambdaErrors:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join ["-", [!Ref pEnvironment, !FindInMap [RegionMap, !Ref "AWS::Region", mRegionPrefix], !Ref pResourceName]]
+      TopicName: !Join ["", [!Ref rSFTPUserCreationLambdaFunction, "sns-error"]]
+  
+  rSnsSubscriptionSFTPUseerCreationLambdaErrors:
+    Type: AWS::SNS:Subscription
+    Properties:
+      Endpoint: help@help.com
+      Protocol: email
+      TopicArn: !Ref rSnsTopicSFTPUserCreationLambdaErrors

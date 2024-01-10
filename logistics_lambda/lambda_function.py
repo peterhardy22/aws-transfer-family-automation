@@ -13,7 +13,7 @@ from awsaccess import new_aws_session
 from orchestrationcredentials import get_secret, login, order_job
 
 try:
-    from requests.packages.urlib3,exceptions import InsecureRequestWarning
+    from requests.packages.urllib3.exceptions import InsecureRequestWarning
 except:
     from urllib3.exceptions import InsecureRequestWarning
     import urllib3
