@@ -26,11 +26,10 @@ Notes:
 
 import json
 from datetime import date, datetime, timedelta
-from dotenv import load_dotenv
 import os
 
 import boto3
-from pprint import pprint
+from dotenv import load_dotenv
 
 from sftp_server_manager import list_servers
 
