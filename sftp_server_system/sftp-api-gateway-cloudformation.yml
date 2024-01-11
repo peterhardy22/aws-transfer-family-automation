@@ -75,3 +75,38 @@ Resources:
   rAPIGateway:
     Type: AWS::ApiGateway::RestApi
     Properties:
+      ApiKeySourceType: HEADER
+      Description: Private Rest API used for ServiceNow integration to handle SFTP user CRUD operations.
+      EndpointConfiguration:
+        Types:
+          - PRIVATE
+        VpcEndpointIds:
+          - !FindInMap [RegionMap, !Ref "AWS::Region", mVpceId]
+      Name: !Join ["", [!Ref pEnvironment, "-", !FindInMap [RegionMap, !Ref "AWS::Region", mRegionPrefix], "-", !Ref pResourceName, "-", "api-gateway-servicenow"]]
+      Policy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: execute-api:Invoke
+            Principal: "*"
+            Resource: arn:aws:execute-api:us-east-2:############:*/*/*/*
+            Condition:
+              StringEquals:
+                aws:SourceVpc: !FindInMap [RegionMap, !Ref "AWS::Region", mVpcId]
+          - Effect: Allow
+            Action: execute-api:Invoke
+            Principal: "*"
+            Resource: arn:aws:execute-api:us-east-2:############:*/*/*/*
+            Condition:
+              StringEquals:
+                aws:SourceVpc: !FindInMap [RegionMap, !Ref "AWS::Region", mVpceId]
+
+  rAPIGatewayAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      IdentitySource: methd.request.header.Authorization
+      Name: SNOW-Patrol
+      ProviderARNs:
+        - !GetAtt rCognitoUserPool.Arn
+      RestApiId: !Ref rAPIGateway
+      Type: COGNITO_USER_POOLS
