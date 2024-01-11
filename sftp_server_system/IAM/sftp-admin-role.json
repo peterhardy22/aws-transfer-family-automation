@@ -1,0 +1,97 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetRole",
+                "iam:PassRole"
+            ],
+            "Resource": [
+                "arn:aws:iam::############:role/sftp-class1-role",
+                "arn:aws:iam::############:role/sftp-standard-role"
+            ]
+        },
+        {
+            "Sid": "S3FullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "s3:*",
+                "s3-object-lambda:*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::dev-us-east-2-sftp",
+                "arn:aws:s3:::dev-us-east-2-sftp/*",
+                "arn:aws:s3:::dev-us-east-1-sftp",
+                "arn:aws:s3:::dev-us-east-1-sftp/*"
+            ]
+        },
+        {
+            "Sid": "AccessDynamoDBTableAllIndexes",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:UpdateItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-2:############:table/dev-global-sftp-user-table",
+                "arn:aws:dynamodb:us-east-2:############:table/dev-global-sftp-user-table/index/*",
+                "arn:aws:dynamodb:us-east-1:############:table/dev-global-sftp-user-table",
+                "arn:aws:dynamodb:us-east-1:############:table/dev-global-sftp-user-table/index/*"
+            ]
+        },
+        {
+            "Sid": "TransferFamilyFullAccess",
+            "Effect": "Allow",
+            "Action": "transfer:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "CloudTrailAccess",
+            "Effect": "Allow",
+            "Action": [
+                "cloudtrail:GetEventSelectors",
+                "cloudtrail:GetTrail",
+                "cloudtrail:GetTrailStatus"
+            ],
+            "Resource": [
+                "arn:aws:cloudtrail:us-east-2:############:trail/my-global-cloudtrail",
+                "arn:aws:cloudtrail:us-east-1:############:trail/my-global-cloudtrail"
+            ]
+        },
+        {
+            "Sid": "CloudWatchLogging",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:*:*:log-group:/aws/transfer/*"
+        },
+        {
+            "Sid": "SNSPublish",
+            "Effect": "Allow",
+            "Action": "sns:Publish",
+            "Resource": "arn:aws:sns:us-east-2:############:error_handling_sftp"
+        },
+        {
+            "Sid": "EC2Access",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface",
+                "ec2:DescribeNetworkInterfaces"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
