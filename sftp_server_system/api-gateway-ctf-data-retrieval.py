@@ -115,7 +115,7 @@ def email_aws_details(api_gateway_id: str) -> Tuple[str, str, List[str]]:
     <h3>The following details should be used for the backend integration of the ServiceNow AWS SFTP Request form: <br/></h4>
     <h4>1.)     Endpoint URL for the dev-ue2-sftp-api-gateway-servicenow API Gateway: vpce-#################.execute-api.us-east-2.vpce.amazonaws.com<br/></h4>
     <h4>2.)     API Gateway Resource Endpoint: DEV/sftp<br/></h4>
-    <h4>3.)     Authentication URL: https://dev-ue2-servicenow.auth,us-east-2.amazoncognito.com<br/></h4>
+    <h4>3.)     Authentication URL: https://dev-ue2-servicenow.auth.us-east-2.amazoncognito.com<br/></h4>
     <h4>4.)     API Gateway Id: {api_gateway_id}<br/></h4>
     <h4>5.)     Client Id: {client_id}<br/></h4>
     <h4>6.)     Client Secret: {client_secret}<br/></h4>

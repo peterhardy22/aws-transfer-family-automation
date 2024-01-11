@@ -82,7 +82,7 @@ Resources:
           - PRIVATE
         VpcEndpointIds:
           - !FindInMap [RegionMap, !Ref "AWS::Region", mVpceId]
-      Name: !Join ["", [!Ref pEnvironment, "-", !FindInMap [RegionMap, !Ref "AWS::Region", mRegionPrefix], "-", !Ref pResourceName, "-", "api-gateway-servicenow"]]
+      Name: !Join ["", [!Ref pEnvironment, "-", !FindInMap [RegionMap, !Ref "AWS::Region", mRegionPrefix], "-", !Ref pResourceName, "-", "api-gateway"]]
       Policy:
         Version: "2012-10-17"
         Statement:

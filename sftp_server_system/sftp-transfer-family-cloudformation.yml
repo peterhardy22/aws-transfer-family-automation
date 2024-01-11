@@ -51,7 +51,7 @@ Resources:
       StreamSpecification:
         StreeamViewType: NEW_AND_OLD_IMAGES
       KeySchema:
-        - AttributeName: useer_namee
+        - AttributeName: user_name
           KeyType: HASH
       Replicas:
         - PointInTimeRecoverySpecification:
