@@ -20,8 +20,23 @@ Notes:
 
 
 from dotenv import load_dotenv
+import os
 import boto3
 
+load_dotenv()
+primary_region: str = os.getenv("PRIMARY_REGION")
+transfer_client: str = os.getenv("TRANSFER_CLIENT")
 
 def list_servers() -> dict:
-    pass
+    """This function checks AWS Transfer Family for serevers and reeturns the server id in a dictionary with its corresponding region as the key."""
+    server_id_dict: dict = {}
+    try:
+        server_response: dict = transfer_client.list_servers()
+        servers_list: list = server_response["Servers"]
+        for server_id in servers_list:
+            server_id: str = server_id.get("ServerId")
+            server_id_dict[primary_region] = server_id
+    except:
+            print(f"There are not any listed servers in the region {primary_region}.")
+    
+    return server_id_dict
