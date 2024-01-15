@@ -11,14 +11,14 @@ Description:
                     ssh_key: str,
                     servicenow_request_number: str,
                     ip_range: str = None,
-                    dr_ip_range: str = None
+                    dr_ip_range: str = None,
                     new_user_name: str = None) -> dict
     3) create_user_configs(user_name: str,
                     access_level: str,
                     ssh_key: str,
                     servicenow_request_number: str,
                     ip_range: str = None,
-                    dr_ip_range: str = None
+                    dr_ip_range: str = None,
                     new_user_name: str = None) -> dict
     4) create_user_folder(user_name: str, access_level: str) -> None
     5) update_ssh_key(user_name: str, ssh_key: str, servicenow_request_number: str) -> dict
@@ -48,6 +48,8 @@ from sftp_server_manager import list_servers
 load_dotenv()
 dynamodb_client: str = os.getenv("DYNAMODB_CLIENT")
 user_table_name: str = os.getenv("USER_TABLE_NAME")
+sns_client: str = os.getenv("SNS_CLIENT")
+sns_topic_arn: str = os.getenv("SNS_TOPIC_ARN")
 server_id_dict: dict = list_servers()
 
 
@@ -64,3 +66,62 @@ def check_user_store(user_name: str) -> dict:
     )
     return user_name_response
 
+
+def create_user(user_name: str,
+                    access_level: str,
+                    ssh_key: str,
+                    servicenow_request_number: str,
+                    ip_range: str = None,
+                    dr_ip_range: str = None,
+                    new_user_name: str = None) -> dict:
+    """This function creates a new Transfer Family user for the SFTP server."""
+    user_name_response: dict = check_user_store(user_name)
+
+    if "Item" in user_name_response:
+        result: str = f"({datetime.now()})  -  {user_name} is already in the SFTP user store."
+        print(result)
+        if new_user_name is not None:
+            print(f"({datetime.now()})  -  New folder location will be created for {new_user_name}.")
+            user_details: dict = user_name_response.get("Item")
+            access_level: str = user_details["access_level"]["S"]
+            ssh_key: str = user_details["ssh_key"]["S"]
+            if user_details.get("ip_range") is not None:
+                ip_range: str = user_details["ip_range"]["S"]
+            
+            create_user_configs(new_user_name, access_level, ssh_key, servicenow_request_number, ip_range, dr_ip_range, user_name)
+            result: str = f"({datetime.now()})  -  Success! {servicenow_request_number} to update {user_name} to {new_user_name} has been completed."
+            print(result)
+            print("******************************************************************************************************")
+
+            result_body: dict {
+                "status_code": 200,
+                "result": result
+            }
+            return result_body
+        print("******************************************************************************************************")
+        
+        result_body: dict = {
+            "status_code": 400,
+            "result": result
+        }
+        subject: str = "SFTP User name Provided Already Exists"
+        sns_client.publish(
+            TopicArn=sns_topic_arn,
+            Message=json.dumps({"default": json.dumps(result_body)}),
+            Subject=subject,
+            MessageStructure="json"
+        )
+        return result_body
+    
+    print(f"({datetime.now()})  -  {user_name} does not exist in the DynamoDB useer table.")
+    print(f"({datetime.now()})  -  New Transfer Family user {user_name} will be created for SFTP server.")
+    create_user_configs(user_name, access_level, ssh_key, servicenow_request_number, ip_range, dr_ip_range)
+    result: str = "({datetime.now()})  -  Success {servicenow_request_number} to create new user {user_name} has been completed."
+    print(result)
+    print("******************************************************************************************************")
+
+    result_body: dict = {
+        "status_code": 200,
+        "result": result
+    }
+    return result_body
