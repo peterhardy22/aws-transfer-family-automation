@@ -25,7 +25,42 @@ Description:
     6) delete_user(user_name: str, servicenow_request_number: str) -> dict
 
 Reference Material:
+    https://docs.aws.amazon.com/transfer/latest/userguide/create-user.html
 
 Notes:
-
+    Version 1.0 Developer: Peter Hardy
+    Version 1.0 Date: 07/01/2023
 """
+
+
+from datetime import date, datetime, timedelta
+from dotenv import load_dotenv
+import json
+import os
+import sys
+
+import boto3
+import botocore.exceptions
+
+from sftp_server_manager import list_servers
+
+
+load_dotenv()
+dynamodb_client: str = os.getenv("DYNAMODB_CLIENT")
+user_table_name: str = os.getenv("USER_TABLE_NAME")
+server_id_dict: dict = list_servers()
+
+
+def check_user_store(user_name: str) -> dict:
+    """This function checks if the user_name provided already exists in the DynamoDB user table.
+    Returns a dictionary that lists the details of that user: access level, public ssh key, role arn, creation date, ip range and dr ip range."""
+    print(f"({datetime.now()})  -  Checking if {user_name} is already in the SFTP user store.")
+
+    user_name_response: dict = dynamodb_client.get_item(
+        TableName=user_table_name,
+        Key={
+            "user_name": {"S": user_name}
+        }
+    )
+    return user_name_response
+
