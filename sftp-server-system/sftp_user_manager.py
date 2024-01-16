@@ -95,7 +95,7 @@ def create_user(user_name: str, access_level: str, ssh_key: str,
             print(result)
             print("******************************************************************************************************")
 
-            result_body: dict {
+            result_body: dict = {
                 "status_code": 200,
                 "result": result
             }

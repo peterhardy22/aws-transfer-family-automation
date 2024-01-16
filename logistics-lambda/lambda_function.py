@@ -9,7 +9,7 @@ import sys
 import time
 
 from smb.SMBConnection import SMBConnection
-from awsaccess import new_aws_session
+from aws_access import new_aws_session
 from orchestrationcredentials import get_secret, login, order_job
 
 try:
