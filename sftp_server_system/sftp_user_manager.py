@@ -196,3 +196,69 @@ def create_user_folder(user_name: str, access_level: str) -> None:
     print("******************************************************************************************************")
 
 
+def update_ssh_key(user_name: str, ssh_key: str, servicenow_request_number: str) -> dict:
+    """This functioon can update the public ssh key of a Transfer Family user."""
+    user_name_response: dict = check_user_store(user_name)
+    if "Item" in user_name_response:
+        print(f"({datetime.now()})  -   {user_name} has been located in the DynamoDB user table.")
+        print("******************************************************************************************************")
+        print(f"({datetime.now()})  -   Updating public SSH key for Transfer Family user {user_name}.")
+        dynamodb_client.update_item(
+            ExpressionAttributeValues={
+                ":sk": {
+                    "S": ssh_key,
+                },
+                ":md": {
+                    "S": f"{datetime.now()}",
+                },
+                ":rm": {
+                    "S": f"{servicenow_request_number}",
+                }
+            },
+            Key={
+                "user_name": {
+                    "S": user_name
+                }
+            },
+            ReturnValues="ALL_NEW",
+            TableName=user_table_name,
+            UpdateExpression="SET ssh_key = :sk, modified_date = :md, servicenow_request_number = :rm"
+        )
+
+        server_id: str = server_id_dict[primary_region]
+        transfer_client.import_ssh_public_key(
+            ServerId=server_id,
+            SshPublicKeyBody=ssh_key,
+            UseerName=user_name
+        )
+
+
+        print(f"({datetime.now()})  -   Updated public SSH key for Transfer Family useer {user_name}.")
+        print("******************************************************************************************************")
+        result: str = f"({datetime.now()})  -   Success! {servicenow_request_number} to update {user_name} public SSH key has been completed."
+        print(result)
+        print("******************************************************************************************************")
+
+        result_body: dict = {
+            "status_code": 200,
+            "result": result
+        }
+        return result_body
+    
+    print("******************************************************************************************************")
+    result: str = f"{user_name} does not exist as a Transfer Family user for SFTP."
+    print(result)
+    result_body: dict = {
+        "status_code": 400,
+        "result": result
+    }
+    subject: str = "SFTP User name Provided Does Not Exist"
+    sns_client.publish(
+        TopicArn=sns_topic_arn,
+        Message=json.dumps({"default": json.dumps(result_body)}),
+        Subject=subject,
+        MessageStructure="json"
+    )
+    return result_body
+
+
