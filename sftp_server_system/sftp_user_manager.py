@@ -53,6 +53,7 @@ class1_role_arn: str = os.getenv("CLASS1_ROLE_ARN")
 sns_topic_arn: str = os.getenv("SNS_TOPIC_ARN")
 standard_role_arn: str = os.getenv("STANDARD_ROLE_ARN")
 dynamodb_client = os.getenv("DYNAMODB_CLIENT")
+s3_client = os.getenv("S3_CLIENT")
 sns_client = os.getenv("SNS_CLIENT")
 transfer_client = os.getenv("TRANSFER_CLIENT")
 server_id_dict: dict = list_servers()
@@ -169,3 +170,29 @@ def create_user_configs(user_name: str, access_level: str, ssh_key: str,
     )
     print(f"({datetime.now()})  -   Transfer Family user {user_name} has been added to the SFTP server.")
     print("******************************************************************************************************")
+
+
+def create_user_folder(user_name: str, access_level: str) -> None:
+    """This function creates new folders for a Transfer Family user in the primary S3 SFTP bucket."""
+    print("******************************************************************************************************")
+    print(f"({datetime.now()})  -   Creating folder structure for {user_name}.")
+    user_folder: str = f"{access_level.upper()}/{user_name}"
+    user_in_folder: str = f"{access_level.upper()}/{user_name}/IN/"
+    user_out_folder: str = f"{access_level.upper()}/{user_name}/OUT/"
+
+    s3_client.put_object(
+        Bucket=primary_sftp_s3_bucket,
+        Key=user_folder
+    )
+    s3_client.put_object(
+        Bucket=primary_sftp_s3_bucket,
+        Key=user_in_folder
+    )
+    s3_client.put_object(
+        Bucket=primary_sftp_s3_bucket,
+        Key=user_out_folder
+    )
+    print(f"({datetime.now()})  -   Folder structure for {user_name} completed.")
+    print("******************************************************************************************************")
+
+
