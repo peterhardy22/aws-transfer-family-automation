@@ -48,3 +48,14 @@ Notes:
     Version 1.0 Developer: Peter Hardy
     Version 1.0 Date: 08/01/23
 """
+
+import json
+from datetime import date, datetime, timedelta
+
+import boto3
+
+from sftp_user_manager import *
+
+def lambda_handler(event, context) -> dict:
+    """Main lambda function for maintaining AWS Transfer Family users for SFTP."""
+    
