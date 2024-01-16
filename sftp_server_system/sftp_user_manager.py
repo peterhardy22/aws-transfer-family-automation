@@ -46,10 +46,15 @@ from sftp_server_manager import list_servers
 
 
 load_dotenv()
-dynamodb_client: str = os.getenv("DYNAMODB_CLIENT")
+primary_region: str = os.getenv("PRIMARY_REGION")
+primary_sftp_s3_bucket: str = os.getenv("PRIMARY_SFTP_S3_BUCKET")
 user_table_name: str = os.getenv("USER_TABLE_NAME")
-sns_client: str = os.getenv("SNS_CLIENT")
+class1_role_arn: str = os.getenv("CLASS1_ROLE_ARN")
 sns_topic_arn: str = os.getenv("SNS_TOPIC_ARN")
+standard_role_arn: str = os.getenv("STANDARD_ROLE_ARN")
+dynamodb_client = os.getenv("DYNAMODB_CLIENT")
+sns_client = os.getenv("SNS_CLIENT")
+transfer_client = os.getenv("TRANSFER_CLIENT")
 server_id_dict: dict = list_servers()
 
 
@@ -67,13 +72,9 @@ def check_user_store(user_name: str) -> dict:
     return user_name_response
 
 
-def create_user(user_name: str,
-                    access_level: str,
-                    ssh_key: str,
-                    servicenow_request_number: str,
-                    ip_range: str = None,
-                    dr_ip_range: str = None,
-                    new_user_name: str = None) -> dict:
+def create_user(user_name: str, access_level: str, ssh_key: str,
+                servicenow_request_number: str, ip_range: str = None,
+                dr_ip_range: str = None, new_user_name: str = None) -> dict:
     """This function creates a new Transfer Family user for the SFTP server."""
     user_name_response: dict = check_user_store(user_name)
 
@@ -125,3 +126,46 @@ def create_user(user_name: str,
         "result": result
     }
     return result_body
+
+
+def create_user_configs(user_name: str, access_level: str, ssh_key: str,
+                    servicenow_request_number: str, ip_range: str = None,
+                    dr_ip_range: str = None, new_user_name: str = None) -> dict:
+    """This function determines the details for when creating a new Transfer Family usere for SFTP."""
+    print("******************************************************************************************************")
+    print(f"({datetime.now()})  -   Setting user configurations for adding {user_name} to the SFTP server.")
+
+    role_arn: str = class1_role_arn if access_level == "class1" else standard_role_arn
+
+    dynamodb_client.put_item(
+        TableName=user_table_name,
+        Item={
+            "user_name": {"S": user_name},
+            "access_level": {"S": access_level},
+            "role_arn": {"S": role_arn},
+            "ssh_key": {"S": ssh_key},
+            "ip_range": {"S": str(ip_range)},
+            "dr_ip_range": {"S": str(dr_ip_range)},
+            "creation_date": {"S": f"{datetime.now()}"},
+            "user_name": {"S": servicenow_request_number}
+        }
+    )
+    print(f"({datetime.now()})  -   New Transfer Family user {user_name} has been added to the DynamoDB user table.")
+    create_user_folder(user_name, access_level)
+    print(f"({datetime.now()})  -   Adding {user_name} to the SFTP server.")
+    server_id: str = server_id_dict[primary_region]
+    transfer_client.create_user(
+        HomeDirectoryType="LOGICAL",
+        HomeDirectoryMappings=[
+            {
+                "Entry": f"/",
+                "Target": f"/{primary_sftp_s3_bucket}/{access_level.upper()/{user_name}}"
+            }
+        ],
+        Role=role_arn,
+        ServerId=server_id,
+        SshPublicKeyBody=ssh_key,
+        UserName=user_name
+    )
+    print(f"({datetime.now()})  -   Transfer Family user {user_name} has been added to the SFTP server.")
+    print("******************************************************************************************************")
