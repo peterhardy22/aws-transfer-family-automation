@@ -49,13 +49,51 @@ Notes:
     Version 1.0 Date: 08/01/23
 """
 
-import json
-from datetime import date, datetime, timedelta
-
-import boto3
+from datetime import datetime
 
 from sftp_user_manager import *
 
+
 def lambda_handler(event, context) -> dict:
     """Main lambda function for maintaining AWS Transfer Family users for SFTP."""
-    
+    print("******************************************************************************************************")
+    print(f"({datetime.now()})  -   ServiceNow AWS SFTP Request form has been submitted, payload entered is shown below:")
+    print(event)
+
+    servicenow_request_number: str = event["servicenow_request_number"]
+    request_type: str = event["request_type"]
+    user_name: str = event["user_name"]
+    access_level: str = event["access_level"]
+    ssh_key: str = event["ssh_key"]
+    ip_range: str = event["ip_range"]
+    dr_ip_range: str = event["dr_ip_range"]
+    new_user_name: str = event["new_user_name"]
+
+    if request_type == "create_user":
+        if ip_range is None:
+            print("******************************************************************************************************")
+            print(f"({datetime.now()})  -   Beginning {servicenow_request_number} for the creation of new internal Transfer Family user {user_name} for SFTP.")
+        else:
+            print("******************************************************************************************************")
+            print(f"({datetime.now()})  -   Beginning {servicenow_request_number} for the creation of new external Transfer Family user {user_name} for SFTP.")
+        result_body: dict = create_user(user_name, access_level, ssh_key, servicenow_request_number, ip_range, dr_ip_range, new_user_name)
+        return result_body
+    if request_type == "update_ssh_key":
+        print("******************************************************************************************************")
+        print(f"({datetime.now()})  -   Beginning {servicenow_request_number} to update the public SSH key for Transfer Family user {user_name}.")
+        result_body: dict = update_ssh_key(user_name, ssh_key, servicenow_request_number)
+        return result_body
+    if request_type == "update_user_name":
+        print("******************************************************************************************************")
+        print(f"({datetime.now()})  -   Beginning {servicenow_request_number} to update Transfer Family username for {user_name} to the new username of {new_user_name}.")
+        result_body: dict = create_user(user_name, access_level, ssh_key, servicenow_request_number, ip_range, dr_ip_range, new_user_name)
+        return result_body
+    if request_type == "delete_user":
+        print("******************************************************************************************************")
+        print(f"({datetime.now()})  -   Beginning {servicenow_request_number} to delete Transfer Family user {user_name}.")
+        result_body: dict = delete_user(user_name, servicenow_request_number)
+        return result_body
+
+
+if __name__ == "__main__":
+    lambda_handler("", "")
