@@ -9,6 +9,6 @@ variable "subnet_ids" {
 }
 
 variable "vpc_name" {
-  description = "Value of VPC"
+  description = "Value of VPC name"
   type        = string
 }
