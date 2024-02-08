@@ -26,6 +26,7 @@ resource "aws_transfer_server" "sftp_server" {
 
   logging_role = data.terraform_remote_state.sftp_admin_role.outputs.sftp_admin_role_arn
   protocols   = ["SFTP"]
+  security_policy_name = "TransferSecurityPolicy-2024-01"
 
   depends_on = [aws_iam_role.sftp_admin_role]
 }
