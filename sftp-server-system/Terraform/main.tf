@@ -30,29 +30,3 @@ resource "aws_transfer_server" "sftp_server" {
 
   depends_on = [aws_iam_role.sftp_admin_role]
 }
-
-resource "aws_iam_role" "sftp_admin_role" {
-  name = "sftp-admin-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action   = [
-            "iam:GetRole",
-            "iam:PassRole"
-        ]
-        Effect   = "Allow"
-        Sid      = ""
-        Resource = [
-                "arn:aws:iam::############:role/sftp-class1-role",
-                "arn:aws:iam::############:role/sftp-standard-role"
-            ]
-      },
-    ]
-  })
-}    
-
-output "sftp_admin_role_arn" {
-  value = aws_iam_role.sftp_admin_role.arn
-}
