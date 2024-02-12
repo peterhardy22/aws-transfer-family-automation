@@ -116,12 +116,12 @@ resource "aws_iam_role" "sftp_class1_role" {
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowSFTPAdminAssumeRole",
-            "Effect": "Allow",
-            "Action": [
-                "iam:GetRole"
-            ],
-            "Resource": "arn:aws:iam::############:role/sftp-admin-role"
+          Action   = [
+            "iam:GetRole"
+        ]
+          Effect   = "Allow"
+          Sid      = "AllowSFTPAdminAssumeRole"
+          Resource = "arn:aws:iam::############:role/sftp-admin-role"
         },
         {
             "Sid": "AllowBucketPolicyForTransferFamily",
