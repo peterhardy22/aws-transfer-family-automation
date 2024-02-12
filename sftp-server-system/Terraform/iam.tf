@@ -168,3 +168,63 @@ resource "aws_iam_role" "sftp_class1_role" {
     ]
   })
 } 
+
+resource "aws_iam_role" "sftp_standard_role" {
+  name = "sftp-standard-role"
+
+  assume_role_policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        Action   = [
+            "iam:GetRole"
+        ]
+        Effect   = "Allow"
+        Sid      = "AllowSFTPAdminAssumeRole"
+        Resource = "arn:aws:iam::############:role/sftp-admin-role"
+      },
+      {
+        Action   = [
+            "s3:DeleteObject",
+            "s3:DeleteObjectVersion",
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:PutObject",
+            "s3:PutObjectAcl"
+        ]
+        Effect   = "Allow"
+        Sid      = "AllowBucketPolicyForTransferFamily"
+        Resource = [
+            "arn:aws:s3:::dev-us-east-2-sftp",
+            "arn:aws:s3:::dev-us-east-2-sftp/*"
+        ]
+      },
+      {
+        Action   = "s3:ListAllMyBuckets"
+        Effect   = "Allow"
+        Sid      = "ListAllMyBuckets"
+        Resource = "*"
+      },
+      {
+        Action   = [
+            "s3:GetBucketLocation",
+            "s3:ListBucket"
+        ]
+        Effect   = "Allow"
+        Sid      = "ListBucket"
+        Resource = "arn:aws:s3:::dev-us-east-2-sftp"
+      },
+      {
+        Action   = [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:DescribeLogStreams",
+            "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Sid      = "CloudWatchLogging"
+        Resource = "arn:aws:logs:*:*:log-groups:/aws/transfer/*"
+      },
+    ]
+  })
+} 
