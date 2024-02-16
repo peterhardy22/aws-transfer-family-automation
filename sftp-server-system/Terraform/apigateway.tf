@@ -51,3 +51,13 @@ resource "aws_api_gateway_method" "sftp_api_gateway_method" {
     resource_id = aws_api_gateway_resource.sftp_api_gateway_resource.id
     rest_api_id = aws_api_gateway_rest_api.sftp_api_gateway.id
 }
+
+resource "aws_api_gateway_integration" "sftp_api_gateway_integration" {
+    rest_api_id = aws_api_gateway_rest_api.sftp_api_gateway.id
+    resource_id = aws_api_gateway_resource.sftp_api_gateway_resource.id
+    http_method = aws_api_gateway_method.sftp_api_gateway_method.http_method
+    type        = "AWS"
+    integration_http_method = "POST"
+    passthrough_behavior = "WHEN_NO_TEMPLATES"
+    uri = data.terraform_remote_state.sftp_user_creation_lambda_function.outputs.sftp_user_creation_lambda_arn
+}
