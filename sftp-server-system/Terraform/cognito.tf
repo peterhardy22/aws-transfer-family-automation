@@ -17,6 +17,10 @@ resource "aws_cognito_user_pool" "snow_user_pool" {
   }
 }
 
+output "snow_user_pool_arn" {
+  value = aws_cognito_user_pool.snow_user_pool.arn
+}
+
 resource "aws_cognito_user_pool_domain" "snow_user_pool_domain" {
   domain       = "${var.resource_name}-${var.aws_environment}-${var.region_prefix}-servicenow"
   user_pool_id = aws_cognito_user_pool.snow_user_pool.id
