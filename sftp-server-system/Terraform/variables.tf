@@ -1,3 +1,8 @@
+variable "aws_account_id" {
+  description = "Value of the AWS account Id"
+  type        = string
+}
+
 variable "aws_environment" {
   description = "Value of the AWS account"
   type        = string

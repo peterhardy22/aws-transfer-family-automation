@@ -17,6 +17,9 @@ resource "aws_lambda_function" "sftp_user_creation_lambda_function" {
     }
 }
 
-resource "aws_lambda_permission" "name" {
-  
+resource "aws_lambda_permission" "sftp_lambda_api_gateway_permission" {
+    action = "lambda:InvokeFunction"
+    function_name = aws_lambda_function.sftp_user_creation_lambda_function.function_name
+    principal = "apigateway.amazonaws.com"
+    source_arn = "arn:aws:execute-api:${var.region}:${var.aws_account_id}:${aws_api_gateway_rest_api.sftp_api_gateway.id}/Dev/POST/sftp"
 }
