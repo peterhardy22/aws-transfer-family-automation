@@ -41,3 +41,13 @@ resource "aws_api_gateway_resource" "sftp_api_gateway_resource" {
     path_part = var.resource_name
     rest_api_id = aws_api_gateway_rest_api.sftp_api_gateway.id
 }
+
+resource "aws_api_gateway_method" "sftp_api_gateway_method" {
+    authorization = "COGNITO_USER_POOLS"
+    authorization_scopes = "application/application.write"
+    authorizer_id = aws_api_gateway_authorizer.sftp_api_gateway_authorizer.id
+    http_method = "POST"
+    operation_name = var.resource_name
+    resource_id = aws_api_gateway_resource.sftp_api_gateway_resource.id
+    rest_api_id = aws_api_gateway_rest_api.sftp_api_gateway.id
+}
