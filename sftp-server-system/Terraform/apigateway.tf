@@ -85,3 +85,11 @@ resource "aws_api_gateway_integration_response" "sftp_api_gateway_integration_re
     http_method = aws_api_gateway_method.sftp_api_gateway_method.http_method
     status_code = "200"
 }
+
+resource "aws_api_gateway_deployment" "sftp_api_gateway_deployment" {
+    rest_api_id = aws_api_gateway_rest_api.sftp_api_gateway.id
+    stage_description = "Deploys API Gateway resource to a stage so ServiceNow can call the API"
+    stage_name = "Dev"
+
+    depends_on = [aws_api_gateway_method.sftp_api_gateway_method]
+}
