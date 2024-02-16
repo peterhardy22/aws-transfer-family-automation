@@ -22,8 +22,13 @@ variable "resource_name" {
   default     = "sftp"
 }
 
+variable "security_group_ids" {
+  description = "List of security group Ids"
+  type        = list(string)
+}
+
 variable "subnet_ids" {
-  description = "List of subnet IDs"
+  description = "List of subnet Ids"
   type        = list(string)
 }
 

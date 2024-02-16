@@ -2,6 +2,13 @@ provider "aws" {
     region = var.region
 }
 
+data "aws_security_groups" "sftp_security_groups" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpcs.sftp_vpc.id]
+  }
+}
+
 data "aws_subnets" "sftp_subnets" {
   filter {
     name   = "vpc-id"
