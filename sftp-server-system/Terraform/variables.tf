@@ -22,6 +22,18 @@ variable "resource_name" {
   default     = "sftp"
 }
 
+
+variable "sftp_s3_bucket" {
+  description = "Name of S3 bucket used for primary SFTP Transfer Family server"
+  type = string
+}
+
+
+variable "vpc_name" {
+  description = "Value of VPC name"
+  type        = string
+}
+
 variable "security_group_ids" {
   description = "List of security group Ids"
   type        = list(string)
@@ -32,7 +44,3 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "vpc_name" {
-  description = "Value of VPC name"
-  type        = string
-}
