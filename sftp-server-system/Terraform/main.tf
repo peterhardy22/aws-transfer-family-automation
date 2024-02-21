@@ -37,3 +37,25 @@ resource "aws_transfer_server" "sftp_server" {
 
   depends_on = [aws_iam_role.sftp_admin_role]
 }
+
+resource "aws_dynamodb_table" "sftp_user_table" {
+    name = "${var.resource_name}-${var.aws_environment}-${var.region_prefix}-ue2-users-table"
+    billing_mode = "PAY_PER_REQUEST"
+    hash_key = "user_name"
+    stream_enabled = true
+    stream_view_type = "NEW_AND_OLD_IMAGES"
+    table_class = "STANDARD_INFREQUENT_ACCESS"
+
+    point_in_time_recovery {
+        enabled = true
+    }
+
+    server_side_encryption {
+        enabled = true
+    }
+
+    attribute {
+        name = "user_name"
+        type = "S"
+    }
+}
