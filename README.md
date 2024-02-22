@@ -3,4 +3,4 @@ Sets up an aws transfer family sftp server and leverages multiple lambda functio
 
 IaC:
   1.) CloudFormation
-  2.) Terraform (85% complete))
+  2.) Terraform
