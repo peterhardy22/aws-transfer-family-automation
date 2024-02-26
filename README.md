@@ -12,3 +12,5 @@ Resources:
   4.) S3 buckets
   5.) Cognito user pool
   6.) DynamoDB table
+  7.) Lambda functions
+  8.) SNS 
